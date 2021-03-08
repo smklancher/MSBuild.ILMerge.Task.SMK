@@ -76,7 +76,10 @@
   <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>copy /Y "MSBuild.ILMerge.Task.dll" "..\..\tools"</PostBuildEvent>
+    <PostBuildEvent>REM choco install nuget.commandline
+copy /Y "MSBuild.ILMerge.Task.dll" "..\..\tools"
+REM output dir cannot end in slash
+nuget.exe pack $(ProjectDir)MSBuild.ILMerge.Task.nuspec -Properties "Configuration=$(Configuration)" -NonInteractive -OutputDirectory "$(ProjectDir)bin\$(ConfigurationName)"</PostBuildEvent>
   </PropertyGroup>
   <Import Project="$(SolutionDir)\.nuget\NuGet.targets" Condition="Exists('$(SolutionDir)\.nuget\NuGet.targets')" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

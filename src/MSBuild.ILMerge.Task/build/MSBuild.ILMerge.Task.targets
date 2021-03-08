@@ -50,6 +50,13 @@
       <Output TaskParameter="Include" ItemName="MergedPackages"/>
     </CreateItem>
 
+
+
+    <!-- smk test  -->
+    <CreateItem Include="@(ReferencePath)" Condition=" '%(ReferencePath.CopyLocal)' == 'false' AND '%(ReferencePath.NuGetPackageId)' != '' AND '%(ReferencePath.FrameworkFile)' != 'true'">
+      <Output TaskParameter="Include" ItemName="MergedPackages"/>
+    </CreateItem>
+
     <!-- all NOT copy local assemblies (except from explicitly specified merged packages) so we use their directories as library path -->
     <CreateItem Include="@(ReferencePath)" Condition=" '%(ReferencePath.CopyLocal)' == 'false' AND ('%(ReferencePath.NuGetPackageId)' == ''  OR !$(ILMergeMergedPackages.Contains('%(ReferencePath.NuGetPackageId)')))">
       <Output TaskParameter="Include" ItemName="UnmergedAssemblies"/>

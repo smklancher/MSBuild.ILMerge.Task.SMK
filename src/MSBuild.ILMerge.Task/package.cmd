@@ -1,1 +1,1 @@
-﻿nuget.exe pack MSBuils.ILMerge.Task.nuspec -Properties "Configuration=$(Configuration)" NonInteractive -OutputDirectory "$(OutputPath)"
+nuget.exe pack MSBuild.ILMerge.Task.nuspec -Properties "Configuration=$(Configuration)" NonInteractive -OutputDirectory "$(OutputPath)"
