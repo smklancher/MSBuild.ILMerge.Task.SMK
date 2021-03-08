@@ -1,0 +1,32 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+ <Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk" />
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <DebugType>full</DebugType>
+    <DebugSymbols>true</DebugSymbols>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="ILMergeOrder.txt" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="ILMergeOrder.txt" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ReferencedLib20\ReferencedLib20.csproj">
+      <Private>true</Private>
+    </ProjectReference>
+    <ProjectReference Include="..\ReferencedNotLocal20\ReferencedNotLocal20.csproj">
+      <Private>false</Private>
+    </ProjectReference>
+  </ItemGroup>
+
+	<Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />
+  <Import Project="$(MSBuildProjectDirectory)\..\..\src\MSBuild.ILMerge.Task\build\MSBuild.ILMerge.Task.targets" />
+</Project>

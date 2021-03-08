@@ -1,0 +1,100 @@
+pool:
+  vmImage: 'vs2017-win2016'
+
+variables:
+  BuildConfiguration: 'Debug'
+  VersionSuffix: '-pre$(Build.BuildNumber)'
+  main: MsBuild.ILMerge.Task
+
+name: $(Build.BuildId)
+
+trigger: none
+
+steps:
+  
+- task: jessehouwing.jessehouwing-vsts-variable-tasks.vsts-variable-set.VariableSetTask@1
+  displayName: 'Unset VersionSuffix if master branch'
+  inputs:
+    VariableName: VersionSuffix
+  condition: eq(variables['Build.SourceBranchName'], 'master')
+
+- task: jessehouwing.jessehouwing-vsts-variable-tasks.vsts-variable-set.VariableSetTask@1
+  displayName: 'Set BuildConfiguration to Release if master branch'
+  inputs:
+    VariableName: BuildConfiguration
+    Value: Release
+  condition: eq(variables['Build.SourceBranchName'], 'master')
+
+- task: NuGetToolInstaller@0
+  displayName: 'Use NuGet 4.4.1'
+  inputs:
+    versionSpec: 4.4.1
+
+- task: NuGetCommand@2
+  displayName: 'NuGet restore'
+  inputs:
+    restoreSolution: $(main).sln
+
+- task: MSBuild@1
+  displayName: 'Build main project'
+  inputs:
+    solution: 'src\$(main)\$(main).csproj'
+    platform: AnyCPU
+    configuration: '$(BuildConfiguration)'
+    msbuildArguments: '/t:build /p:Configuration=$(BuildConfiguration)'
+    clean: true
+    
+- task: MSBuild@1
+  displayName: 'Build net472 test libraries'
+  inputs:
+    solution: 'tests\**\*472.csproj'
+    platform: AnyCPU
+    configuration: '$(BuildConfiguration)'
+    msbuildArguments: '/t:build  /p:Configuration=$(BuildConfiguration)'
+    clean: true    
+    
+- task: MSBuild@1
+  displayName: 'Build netstandard test libraries'
+  inputs:
+    solution: 'tests\**\*20.csproj'
+    platform: AnyCPU
+    configuration: '$(BuildConfiguration)'
+    msbuildArguments: '/t:build  /p:Configuration=$(BuildConfiguration)'
+    
+- task: MSBuild@1
+  displayName: 'Build test projects'
+  inputs:
+    solution: 'tests\**\*.Tests.csproj'
+    platform: AnyCPU
+    configuration: '$(BuildConfiguration)'
+    msbuildArguments: '/t:build  /p:Configuration=$(BuildConfiguration)'
+    
+- task: VSTest@2
+  displayName: 'Run tests (net472)'
+  inputs:
+    testAssemblyVer2: |
+     tests\**\$(BuildConfiguration)\*472.tests.dll
+     !**\obj\**
+    platform: AnyCPU
+    configuration: '$(BuildConfiguration)'
+    
+- task: DotNetCoreCLI@2
+  displayName: 'Run tests (netstandard2.0)'
+  inputs:
+    command: test
+    projects: |
+     tests\**\*20.tests.dll
+     !**\obj\**
+
+- task: NuGetCommand@2
+  displayName: 'NuGet pack'
+  inputs:
+    command: pack
+    packagesToPack: 'src\$(main)\$(main).nuspec'
+    buildProperties: 'ci=$(VersionSuffix)'
+ 
+- task: PublishBuildArtifacts@1
+  displayName: 'Publish Artifact: drop'
+  inputs:
+    PathtoPublish: '$(build.artifactstagingdirectory)'
+  condition: succeededOrFailed()
