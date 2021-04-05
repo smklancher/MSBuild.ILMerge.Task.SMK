@@ -76,7 +76,8 @@
   <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>REM choco install nuget.commandline
+    <PostBuildEvent>REM requires installing nuget commandline.  example using chocolatey: 
+REM choco install nuget.commandline
 copy /Y "MSBuild.ILMerge.Task.dll" "..\..\tools"
 REM output dir cannot end in slash
 nuget.exe pack $(ProjectDir)MSBuild.ILMerge.Task.nuspec -Properties "Configuration=$(Configuration)" -NonInteractive -OutputDirectory "$(ProjectDir)bin\$(ConfigurationName)"</PostBuildEvent>

@@ -36,12 +36,12 @@
     <Message Text="Merged packages: $(ILMergeMergedPackages)" Importance="high" Condition="$(ILMergeMergedPackages) != ''"/>
 
     <!-- all copy local assemblies referenced from this project that go to the executable except the main one-->
-    <CreateItem Include="@(ReferencePath)" Condition=" '%(CopyLocal)' == 'true' ">
+    <CreateItem Include="@(ReferencePath)" Condition=" '%(ReferencePath.CopyLocal)' == 'true' ">
       <Output TaskParameter="Include"  ItemName="MergedAssemblies"/>
     </CreateItem>
 
     <!-- all copy local dependency assemblies -->
-    <CreateItem Include="@(ReferenceDependencyPaths)" Condition=" '%(CopyLocal)' == 'true' ">
+    <CreateItem Include="@(ReferenceDependencyPaths)" Condition=" '%(ReferencePath.CopyLocal)' == 'true' ">
       <Output TaskParameter="Include" ItemName="MergedDependencies"/>
     </CreateItem>
     

@@ -2,40 +2,41 @@
 <package >
   <metadata>
     <id>MSBuild.ILMerge.Task</id>
-    <version>2.0.0$ci$</version>
+    <version>2.0.2$ci$</version>
     <title>MSBuild ILMerge task</title>
     <authors>Alexander Nosenko</authors>
     <owners>Alexander Nosenko</owners>
-    <licenseUrl>https://dev.azure.com/Refactorius/MsBuild.ILMerge.Task/license</licenseUrl>
-    <projectUrl>https://dev.azure.com/Refactorius/MsBuild.ILMerge.Task</projectUrl>
+    <projectUrl>https://github.com/smklancher/MSBuild.ILMerge.Task.SMK</projectUrl>
     <iconUrl>http://www.veryicon.com/icon/32/System/Refresh%20Cl/System%20Package.png</iconUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <summary>MSBuild ILMerge task allows you to use the famous ILMerge utility in automated builds and/or Visual Studio 2019 projects.</summary>
     <description>
-MSBuild ILMerge task allows you to use the famous ILMerge utility (ILMerge nuget package, see http://research.microsoft.com/en-us/people/mbarnett/ILMerge.aspx) in automated builds and/or Visual Studio 2019 projects.
-It is similar to the ILMerge.MSBuild.Tasks nuget package, originally published by neoeinstein@gmail.com (that seems to be abandoned) with the following additional features:
+      Forked for fixes: https://github.com/smklancher/MSBuild.ILMerge.Task.SMK
+      Original: https://dev.azure.com/Refactorius/MsBuild.ILMerge.Task
 
-- version 2.0 is able to merge packages referenced from SDK-style projects;
-- It supports all the latest ILMerge options;
-- ILMerge.exe is discovered as package dependency;
-- The .targets file overrides the CopyFilesToOutputDirectory build target, leaving the AfterBuild target free for further customization;
-- It attempts to guess the reasonable merge order for the included assemblies and lets you to fine-tune it with a configuration file.
+      MSBuild ILMerge task allows you to use the famous ILMerge utility (ILMerge nuget package, see http://research.microsoft.com/en-us/people/mbarnett/ILMerge.aspx) in automated builds and/or Visual Studio 2019 projects.
+      It is similar to the ILMerge.MSBuild.Tasks nuget package, originally published by neoeinstein@gmail.com (that seems to be abandoned) with the following additional features:
 
-ILMerge.exe is not included into this package because its license prohibits redistribution. Referencing it as package dependency and loading it from its package location ensures that the latest ILMerge version is always used.
+      - version 2.0 is able to merge packages referenced from SDK-style projects;
+      - It supports all the latest ILMerge options;
+      - ILMerge.exe is discovered as package dependency;
+      - The .targets file overrides the CopyFilesToOutputDirectory build target, leaving the AfterBuild target free for further customization;
+      - It attempts to guess the reasonable merge order for the included assemblies and lets you to fine-tune it with a configuration file.
 
-NB: to use non-default configuration, copy ILMerge.props from package content folder to your project and add &lt;Import Project="ILMerge.props" /&gt; to the .csproj file.
+      ILMerge.exe is not included into this package because its license prohibits redistribution. Referencing it as package dependency and loading it from its package location ensures that the latest ILMerge version is always used.
+
+      NB: to use non-default configuration, copy ILMerge.props from package content folder to your project and add &lt;Import Project="ILMerge.props" /&gt; to the .csproj file.
 
 </description>
     <releaseNotes>
 - To be used with SDK-style projects.
 - ILMerge.props should be included in the project explicitly;
-- Supports (and requires) ILMerge 3.0.29+
+- Supports (and requires) ILMerge 3.0.41
 - Supports transitive merge and all ILMerge command-line parameters (including InternalizeExcludeFile).
 	</releaseNotes>
-    <copyright>Copyright 2013-2020 Alexander Nosenko</copyright>
     <tags>MSBuild ILMerge</tags>
     <dependencies>
-      <dependency id="ilmerge" version="3.0.29" />
+      <dependency id="ilmerge" version="3.0.41" />
     </dependencies>
   </metadata>
   <files>
