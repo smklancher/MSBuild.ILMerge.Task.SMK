@@ -270,9 +270,12 @@ namespace MSBuild.ILMerge
         /// <remarks>use Dynamic. Segregate executable search in a separate class.</remarks>
         public override bool Execute()
         {
+            // handle nuget packages with reference assemblies
+            var input=ReplaceRefNugetAssemblies();
+
             var targetPlatform = ConvertTargetPlatform(this.TargetPlatform);
             var targetPlatformDir = this.GetTargetPlatformDirectory(this.TargetPlatform);
-            var inputAssemblies = this.ReshuffleInputAssemblies();
+            var inputAssemblies = this.ReshuffleInputAssemblies(input);
             var searchDirs = this.CollectAllLibraryPaths();
 
             if (this.DebugInfo || this.ShouldLog)
@@ -391,6 +394,83 @@ namespace MSBuild.ILMerge
 
         #region private methods
 
+        /// <summary>
+        /// This is certainly not elegant but fixes the specific issue I have:
+        /// System.Buffers nuget package has a ref assembly using net45, but lib only has net461 (seems odd that is allowed).
+        /// At this point there is no reason not to build for 4.8, so any "net4" library will work.
+        /// </summary>
+        /// <param name="path"></param>
+        /// <returns></returns>
+        private string PossibleOtherTfmImplmentation(string path)
+        {
+            var libFolder = Path.Combine(path.Substring(0, path.IndexOf(@"\ref\")), @"lib\");
+            var refTfm = Path.GetFileName(Path.GetDirectoryName(path));
+
+            // if the ref assembly as a .NET framework tfm (starting with net4)...
+            if (Directory.Exists(libFolder) && refTfm.Contains("net4"))
+            {
+                foreach(var dir in Directory.EnumerateDirectories(libFolder))
+                {
+                    // then take any lib assembly that is .NET framework
+                    if (dir.Contains("net4"))
+                    {
+                        return Path.Combine(dir, Path.GetFileName(path));
+                    }
+                }
+
+            }
+
+            return string.Empty;
+        }
+
+        /// <summary>
+        /// Nuget packages can contain reference assemblies (ref folder) and these will be used for compilation.
+        /// These have no actual method bodies, so need to swap to the implmentation assembly (lib folder) before merging.
+        /// This assumes that any path with a "\ref\" folder is a reference assembly in a nuget folder structure, 
+        /// though only replaces is an equivolent lib file exists.
+        /// </summary>
+        private List<string> ReplaceRefNugetAssemblies()
+        {
+            var results=new List<string>();
+            foreach(var item in this.InputAssemblies)
+            {
+                var itemToAdd = item.ItemSpec;
+
+                // it would be more definitive to load the dll in reflection context
+                // and check for the assembly level attribute ReferenceAssembly
+                // but probably not worth extra peformance cost
+                if (item.ItemSpec.Contains(@"\ref\"))
+                {
+                    var lib = item.ItemSpec.Replace(@"\ref\", @"\lib\");
+                    if (File.Exists(lib))
+                    {
+                        // if there is a dll in a parallel "lib" folder, then use that over the "ref" folder
+                        itemToAdd = lib;
+                        Log.LogMessage(MessageImportance.High, $"Reference assembly replaced with implementation assembly: {itemToAdd}");
+                    }
+                    else
+                    {
+                        var otherTfmPath = PossibleOtherTfmImplmentation(item.ItemSpec);
+                        if(!string.IsNullOrEmpty(otherTfmPath))
+                        {
+                            itemToAdd = otherTfmPath;
+                            Log.LogMessage(MessageImportance.High, $"Possible ref assembly with no matching implementation assembly...: {item.ItemSpec}");
+                            Log.LogMessage(MessageImportance.High, $"...but guessing at possibly compatible lib assembly with different TFM: {itemToAdd}");
+                        }
+                        else
+                        {
+                            Log.LogMessage(MessageImportance.High, $"Possible ref assembly with no matching implementation assembly: {itemToAdd}");
+
+                        }
+                    }
+                }
+
+                results.Add(itemToAdd);
+            }
+
+            return results;
+        }
+
         private void ListItems(string message, IEnumerable<string> items)
         {
             Log.LogMessage(MessageImportance.Low, message);
@@ -406,17 +486,17 @@ namespace MSBuild.ILMerge
         /// <returns>The reordered list of input assemblies. The master assembly will remain the first one.</returns>
         /// <remarks>TODO: use http://stackoverflow.com/questions/6653715/view-nuget-package-dependency-hierarchy 
         /// to flatten package dependency graph.</remarks>
-        private string[] ReshuffleInputAssemblies()
+        private string[] ReshuffleInputAssemblies(List<string> input)
         {
             var result = new List<string>();
             var projectFiles = new List<string>();
             var libraryFiles = new List<string>();
 
-            result.Add(this.BuildPath(this.InputAssemblies[0].ItemSpec));
+            result.Add(this.BuildPath(input[0]));
 
-            for (var i = 1; i < this.InputAssemblies.Length; i++)
+            for (var i = 1; i < input.Count; i++)
             {
-                var fileName = this.BuildPath(this.InputAssemblies[i].ItemSpec);
+                var fileName = this.BuildPath(input[i]);
                 if (!string.IsNullOrWhiteSpace(this.PackagesDir))
                 {
                     var pathInPackages = GetRelativePath(this.PackagesDir, fileName);

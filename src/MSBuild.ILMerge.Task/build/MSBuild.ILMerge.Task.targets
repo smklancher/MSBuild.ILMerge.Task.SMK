@@ -83,6 +83,11 @@
     </PropertyGroup>
   </Target>
 
+	<!-- possibly change this so it doesn't overwrite the default copy local behavior
+	https://stackoverflow.com/a/9608238
+	http://www.hanselman.com/blog/mixing-languages-in-a-single-assembly-in-visual-studio-seamlessly-with-ilmerge-and-msbuild
+	https://web.archive.org/web/20060329210231/http://blogs.msdn.com:80/jomo_fisher/archive/2006/03/05/544144.aspx
+	-->
   <!-- do not copy copy-local assemblies, they will be merged -->
   <Target Name="_CopyFilesMarkedCopyLocal" />
 
