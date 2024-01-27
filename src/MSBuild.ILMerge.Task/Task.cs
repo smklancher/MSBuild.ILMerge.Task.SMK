@@ -395,8 +395,9 @@ namespace MSBuild.ILMerge
         #region private methods
 
         /// <summary>
-        /// This is certainly not elegant but fixes the specific issue I have:
-        /// System.Buffers nuget package has a ref assembly using net45, but lib only has net461 (seems odd that is allowed).
+        /// This is certainly not elegant but fixes the specific issues I have:
+        /// * System.Buffers nuget package has a ref assembly using net45, but lib only has net461 (seems odd that is allowed).
+        /// * lib.harmony has a netstandard2.0 ref assembly
         /// At this point there is no reason not to build for 4.8, so any "net4" library will work.
         /// </summary>
         /// <param name="path"></param>
@@ -406,28 +407,46 @@ namespace MSBuild.ILMerge
             var libFolder = Path.Combine(path.Substring(0, path.IndexOf(@"\ref\")), @"lib\");
             var refTfm = Path.GetFileName(Path.GetDirectoryName(path));
 
-            // if the ref assembly as a .NET framework tfm (starting with net4)...
-            if (Directory.Exists(libFolder) && refTfm.Contains("net4"))
+            var usableTfm=string.Empty;
+
+            // if the ref assembly as a .NET framework or standard tfm...
+            if (Directory.Exists(libFolder) && (refTfm.Contains("net4") || refTfm.Contains("netstandard")))
             {
-                foreach(var dir in Directory.EnumerateDirectories(libFolder))
+                // ordered so we end up with the highest available version
+                IEnumerable<string> dirs = Directory.EnumerateDirectories(libFolder).OrderBy(x=>x);
+                foreach (var dir in dirs)
                 {
                     // then take any lib assembly that is .NET framework
                     if (dir.Contains("net4"))
                     {
-                        return Path.Combine(dir, Path.GetFileName(path));
+                        usableTfm=Path.Combine(dir, Path.GetFileName(path));
                     }
                 }
 
             }
 
-            return string.Empty;
+            if (!string.IsNullOrEmpty(usableTfm))
+            {
+                Log.LogMessage(MessageImportance.High, $"Possible ref assembly with no matching implementation assembly...");
+                Log.LogMessage(MessageImportance.High, path);
+                Log.LogMessage(MessageImportance.High, $"...but guessing at possibly compatible lib assembly with different TFM:");
+                Log.LogMessage(MessageImportance.High, usableTfm);
+            }
+            else
+            {
+                // don't want to throw an error since just assuming ref by path
+                Log.LogWarning($"Possible ref assembly with no matching implementation assembly: {path}");
+
+            }
+
+            return usableTfm;
         }
 
         /// <summary>
         /// Nuget packages can contain reference assemblies (ref folder) and these will be used for compilation.
         /// These have no actual method bodies, so need to swap to the implmentation assembly (lib folder) before merging.
         /// This assumes that any path with a "\ref\" folder is a reference assembly in a nuget folder structure, 
-        /// though only replaces is an equivolent lib file exists.
+        /// though only replaces if an equivolent lib file exists.
         /// </summary>
         private List<string> ReplaceRefNugetAssemblies()
         {
@@ -454,13 +473,6 @@ namespace MSBuild.ILMerge
                         if(!string.IsNullOrEmpty(otherTfmPath))
                         {
                             itemToAdd = otherTfmPath;
-                            Log.LogMessage(MessageImportance.High, $"Possible ref assembly with no matching implementation assembly...: {item.ItemSpec}");
-                            Log.LogMessage(MessageImportance.High, $"...but guessing at possibly compatible lib assembly with different TFM: {itemToAdd}");
-                        }
-                        else
-                        {
-                            Log.LogMessage(MessageImportance.High, $"Possible ref assembly with no matching implementation assembly: {itemToAdd}");
-
                         }
                     }
                 }
